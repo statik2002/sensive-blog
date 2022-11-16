@@ -26,7 +26,7 @@ def serialize_post(post):
         'title': post.title,
         'teaser_text': post.text[:200],
         'author': post.author.username,
-        'comments_amount': post.num_comments,
+        'comments_amount': post.comments_count,
         'image_url': post.image.url if post.image else None,
         'published_at': post.published_at,
         'slug': post.slug,
@@ -44,9 +44,18 @@ def serialize_tag(tag):
 
 def index(request):
 
-    most_popular_posts = Post.objects.annotate(num_comments=Count('to_post', distinct=True), num_likes=Count('likes', distinct=True)).order_by('-num_likes')[:5].prefetch_related('author')
+    #most_popular_posts = Post.objects.annotate(num_comments=Count('to_post', distinct=True), num_likes=Count('likes', distinct=True)).order_by('-num_likes')[:5].prefetch_related('author')
+    most_popular_posts = Post.objects.annotate(likes_count=Count('likes')).order_by('-likes_count')[:5].prefetch_related('author')
+    most_popular_posts_ids = [post.id for post in most_popular_posts]
 
-    fresh_posts = Post.objects.annotate(num_comments=Count('to_post', distinct=True)).order_by('published_at').prefetch_related('author')
+    posts_with_comments = Post.objects.filter(id__in=most_popular_posts_ids).annotate(comments_count=Count('to_post'))
+    ids_and_comments = posts_with_comments.values_list('id', 'comments_count')
+    count_for_id = dict(ids_and_comments)
+
+    for post in most_popular_posts:
+        post.comments_count = count_for_id[post.id]
+
+    fresh_posts = Post.objects.annotate(comments_count=Count('to_post', distinct=True)).order_by('published_at').prefetch_related('author')
     most_fresh_posts = list(fresh_posts)[-5:]
 
     most_popular_tags = Tag.objects.annotate(num_posts=Count('posts')).order_by('num_posts')[:5]
