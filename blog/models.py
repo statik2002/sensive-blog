@@ -32,7 +32,8 @@ class PostQuerySet(models.QuerySet):
 
         for post in self:
             for tag in post.tags.all():
-                tag.posts_count = Post.objects.filter(tags=tag).prefetch_related('tags').count()
+
+                tag.posts_count = Post.objects.filter(tags=tag).prefetch_related('tags')
         return self
 
 
@@ -42,10 +43,13 @@ class TagQuerySet(models.QuerySet):
         return self.annotate(num_posts=Count('posts')).order_by('-num_posts')
 
     def post_with_tag(self):
-        for tag in self:
-            tag.posts_count = Post.objects.filter(tags=tag).prefetch_related('tags').count()
+        #return self.related_name('post').annotate(posts_count=Count('post'))
+        #self.posts_count = self.posts.count()
+        #return self
+        #for tag in self:
+        #    tag.posts = Tag.select_related('posts').count()
 
-        return self
+        return self.annotate(posts_count=Count('posts'))
 
 
 class Post(models.Model):
