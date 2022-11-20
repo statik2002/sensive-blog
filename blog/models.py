@@ -43,11 +43,6 @@ class TagQuerySet(models.QuerySet):
         return self.annotate(num_posts=Count('posts')).order_by('-num_posts')
 
     def post_with_tag(self):
-        #return self.related_name('post').annotate(posts_count=Count('post'))
-        #self.posts_count = self.posts.count()
-        #return self
-        #for tag in self:
-        #    tag.posts = Tag.select_related('posts').count()
 
         return self.annotate(posts_count=Count('posts'))
 
