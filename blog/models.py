@@ -7,19 +7,20 @@ from django.contrib.auth.models import User
 class PostQuerySet(models.QuerySet):
 
     def year(self, year):
-        posts_at_year = self.filter(published_at__year=year).order_by('published_at')
+        posts_at_year = self.filter(published_at__year=year).\
+            order_by('published_at')
         return posts_at_year
 
     def popular(self):
-        most_popular_posts = self.annotate(likes_count=Count('likes')).order_by('-likes_count')
-
+        most_popular_posts = self.annotate(likes_count=Count('likes')).\
+            order_by('-likes_count')
         return most_popular_posts
 
     def fetch_with_comments_count(self):
 
         most_popular_posts_ids = [post.id for post in self]
-
-        posts_with_comments = Post.objects.filter(id__in=most_popular_posts_ids).annotate(comments_count=Count('to_post'))
+        posts_with_comments = Post.objects.filter(id__in=most_popular_posts_ids).\
+            annotate(comments_count=Count('comments_to_post'))
         ids_and_comments = posts_with_comments.values_list('id', 'comments_count')
         count_for_id = dict(ids_and_comments)
 
@@ -32,8 +33,9 @@ class PostQuerySet(models.QuerySet):
 
         for post in self:
             for tag in post.tags.all():
+                tag.posts_count = Post.objects.filter(tags=tag).\
+                    prefetch_related('tags')
 
-                tag.posts_count = Post.objects.filter(tags=tag).prefetch_related('tags')
         return self
 
 
@@ -43,7 +45,6 @@ class TagQuerySet(models.QuerySet):
         return self.annotate(num_posts=Count('posts')).order_by('-num_posts')
 
     def post_with_tag(self):
-
         return self.annotate(posts_count=Count('posts'))
 
 
@@ -108,7 +109,7 @@ class Comment(models.Model):
         'Post',
         on_delete=models.CASCADE,
         verbose_name='Пост, к которому написан',
-        related_name='to_post')
+        related_name='comments_to_post')
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
