@@ -1,12 +1,12 @@
 from django.db import models
-from django.db.models import Count
+from django.db.models import Count, Prefetch
 from django.urls import reverse
 from django.contrib.auth.models import User
 
 
 class PostQuerySet(models.QuerySet):
 
-    def year(self, year):
+    def get_posts_at_year(self, year):
         posts_at_year = self.filter(published_at__year=year).\
             order_by('published_at')
         return posts_at_year
@@ -33,8 +33,7 @@ class PostQuerySet(models.QuerySet):
 
         for post in self:
             for tag in post.tags.all():
-                tag.posts_count = Post.objects.filter(tags=tag).\
-                    prefetch_related('tags')
+                tag.posts_count = Post.objects.prefetch_related('tags')
 
         return self
 
