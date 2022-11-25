@@ -31,9 +31,12 @@ class PostQuerySet(models.QuerySet):
 
     def fetch_with_tags_count(self):
 
+        # Это не работает. Попадает post.comments_count
+        #return self.prefetch_related(Prefetch('tags', queryset=Tag.objects.all().annotate(posts_count=Count('posts'))))
+
         for post in self:
             for tag in post.tags.all():
-                tag.posts_count = Post.objects.prefetch_related('tags')
+                tag.posts_count = Post.objects.prefetch_related('tags').annotate(poposts_count=Count('tags'))
 
         return self
 
